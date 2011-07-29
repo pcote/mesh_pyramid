@@ -1,6 +1,6 @@
 mesh_pyramid
 by Phil Cote
-http://www.blenderpythontutorials.com
+http://www.blenderaddons.com
 
 PURPPOSE: 
 This script is for creating 3D mesh pyramids.  It allows for setting step height, width, number of steps, and other factors.

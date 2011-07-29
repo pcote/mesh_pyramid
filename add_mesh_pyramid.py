@@ -20,10 +20,10 @@
 # ***** END GPL LICENCE BLOCK *****
 bl_info = {
     'name': 'Mesh Pyramid',
-    'author': 'Phil Cote, cotejrp1, (http://www.blenderpythontutorials.com)',
-    'version': (0,1),
-    "blender": (2, 5, 7),
-    "api": 35853,
+    'author': 'Phil Cote, cotejrp1, (http://www.blenderaddons.com)',
+    'version': (0,2),
+    "blender": (2, 5, 8),
+    "api": 37702,
     'location': 'View3D > Add > Mesh',
     'description': 'Create an egyption-style step pyramid',
     'warning': '', # used for warning icon and text in addons panel
@@ -32,7 +32,7 @@ bl_info = {
 
 
 import bpy
-from bpy.props import FloatVectorProperty, IntProperty, FloatProperty
+from bpy.props import FloatVectorProperty, IntProperty, FloatProperty, BoolProperty
 from add_utils import AddObjectHelper, add_object_data
 from mathutils import Vector
 
@@ -114,10 +114,20 @@ class OBJECT_OT_add_pyramid(bpy.types.Operator, AddObjectHelper):
     bl_description = "Create a Pyramid Mesh"
     bl_options = {'REGISTER', 'UNDO'}
     
-    initialSize = FloatProperty( name="Initial Size", default=2.0, min=0.0, max=20.0 )
-    stepHeight= FloatProperty( name="Step Height", default=0.2, min=0.0, max=10.0 )
-    stepWidth= FloatProperty( name="Step Width", default=0.2, min=0.0, max=10.0 )
-    numberSteps= IntProperty( name="Number Steps", default=5, min=1, max=20 )
+    initialSize = FloatProperty( name="Initial Size", default=2.0, min=0.0, max=20.0,
+                                description="Set the initial size at the pyramid base" )
+                                
+    stepHeight= FloatProperty( name="Step Height", default=0.2, min=0.0, max=10.0,
+                                description="How tall each of the steps will be." )
+                                
+    stepWidth= FloatProperty( name="Step Width", default=0.2, min=0.0, max=10.0,
+                                description="How fast the steps come in towards a point" )
+                                
+    numberSteps= IntProperty( name="Number Steps", default=5, min=1, max=20,
+                                description="" )
+                                 
+    # TODO: New feature disabled until I work out a way to implement it.
+    pointTop = BoolProperty( name = "Point the Top", default = False, enabled = False )
     
 
     def execute(self, context):
@@ -126,7 +136,7 @@ class OBJECT_OT_add_pyramid(bpy.types.Operator, AddObjectHelper):
 
 
 def menu_func(self, context):
-    self.layout.operator(OBJECT_OT_add_pyramid.bl_idname)
+    self.layout.operator(OBJECT_OT_add_pyramid.bl_idname, text="Pyramid", icon="PLUGIN")
 
 
 def register():
