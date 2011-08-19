@@ -21,7 +21,7 @@
 bl_info = {
     'name': 'Mesh Pyramid',
     'author': 'Phil Cote, cotejrp1, (http://www.blenderaddons.com)',
-    'version': (0,2),
+    'version': (0,3),
     "blender": (2, 5, 8),
     "api": 37702,
     'location': 'View3D > Add > Mesh',
@@ -30,14 +30,13 @@ bl_info = {
     'category': 'Add Mesh'}
 
 
-
 import bpy
 from bpy.props import FloatVectorProperty, IntProperty, FloatProperty, BoolProperty
 from add_utils import AddObjectHelper, add_object_data
 from mathutils import Vector
 
 
-def makePyramid( initialSize, stepHeight, stepWidth, numberSteps ):
+def makePyramid( initialSize, stepHeight, stepWidth, numberSteps, pointTop ):
     
     vertList = []
     faceList = []
@@ -95,11 +94,33 @@ def makePyramid( initialSize, stepHeight, stepWidth, numberSteps ):
  
     # cap the bottom.
     faceList.extend( ( ( 2, 3, 1, 0), ) )
+    
+    if pointTop:
+        # calculate the center
+        x2 = vertList[ voffset+7][0]
+        x1 = vertList[voffset+6][0]    
+        centerX = ( ( x2 - x1 ) / 2 ) + x1
+        
+        y2 = vertList[ voffset + 7 ][1]
+        y1 = vertList[ voffset + 5][1]
+        centerY = ( ( y2 - y1 ) / 2 ) + y1 
+        
+        centerZ = vertList[voffset+6][2]
+        
+        pointCenter = (centerX, centerY, centerZ )
+        vertList[ voffset+6 ] = pointCenter
+        vertList[ voffset+7 ] = pointCenter
+        vertList[ voffset+5 ] = pointCenter
+        vertList[ voffset+4 ] = pointCenter
+    
+    
     return vertList, faceList
 
 
 def add_pyramid_object( self, context ):
-    verts, faces = makePyramid( self.initialSize, self.stepHeight, self.stepWidth, self.numberSteps )
+    verts, faces = makePyramid( self.initialSize, self.stepHeight, self.stepWidth, self.numberSteps, self.pointTop )
+    print( self.initialSize )
+    
     mesh_data = bpy.data.meshes.new( name = "Pyramid" )
     mesh_data.from_pydata( verts, [], faces )
     mesh_data.update()
@@ -126,8 +147,7 @@ class OBJECT_OT_add_pyramid(bpy.types.Operator, AddObjectHelper):
     numberSteps= IntProperty( name="Number Steps", default=5, min=1, max=20,
                                 description="" )
                                  
-    # TODO: New feature disabled until I work out a way to implement it.
-    pointTop = BoolProperty( name = "Point the Top", default = False, enabled = False )
+    pointTop = BoolProperty( name = "Point the Top", default = False )
     
 
     def execute(self, context):
