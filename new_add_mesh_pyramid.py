@@ -25,12 +25,35 @@ def make_step(initial_size, step_height, height_offset, num_sides):
 
 
 def create_mesh_data(init_size, height, height_offset, num_sides, num_steps):
+        from functools import reduce
+        from operator import concat
         
-        data_set = []
-        step_data = make_step(init_size, height, height_offset, num_sides)
-        data_set.extend(step_data)
+        z_data = [[x]*num_sides*2 for x in range(num_steps+1)]
+        z_data = reduce(concat, z_data)
+        z_data = z_data[num_sides : -num_sides]
+        data_set = [(0,0,z) for z in z_data]
+        
+        axis = [0,0,-1]
+        PI2 = pi * 2
+        rad = init_size / 2
+        
+        """
+        make quaternion angles out of current side, num_sides, and pi*2
+        make a list of side values. (where by side i mean a corner actually)
+        """
+        quat_angles = [(cur_side/num_sides) * PI2 
+                            for cur_side in range(num_sides)]
+        quaternions = [Quaternion(axis, quat_angle) 
+                            for quat_angle in quat_angles]
+        temp_vectors = [Vector([rad, 0, height_offset] for height_offset in z_data)]
+        
+        # TODO: This is untested.  Need to run a set trace on this.
+        vectors = []
+        for i, vec in temp_vectors:
+            vectors.append( quaternions[i] * vec )
+        
+        
         return data_set
-
 
 class AddPyramid(bpy.types.Operator):
     '''Add a mesh pyramid'''
@@ -51,7 +74,7 @@ class AddPyramid(bpy.types.Operator):
     num_steps = IntProperty(
                     name="Number of Steps",
                     description="Number of Steps",
-                    min=1, max=3, default=1)
+                    min=1, max=3, default=2)
                 
     width = FloatProperty(
             name="Width",
@@ -66,6 +89,7 @@ class AddPyramid(bpy.types.Operator):
             min=0.01, max=100.0,
             default=1.0
             )
+            
     reduce_by = FloatProperty(
                 name="Reduce By", description = "Reduce By",
                 min=.1, max = 2.0, default=.2) 
@@ -74,18 +98,18 @@ class AddPyramid(bpy.types.Operator):
     def execute(self, context):
         height_offset = 1 # placeholder variable.
         
-        verts_loc, faces_info = create_mesh_data(self.initial_size, 
+        verts_loc = create_mesh_data(self.initial_size, 
                               self.height, height_offset,
                               self.num_sides, self.num_steps)
-
+        
         mesh = bpy.data.meshes.new("Pyramid")
         bm = bmesh.new()
 
         for v_co in verts_loc:
             bm.verts.new(v_co)
         
-        for f in faces_info:
-            bm.faces.new(f)
+        #for f in faces_info:
+        #    bm.faces.new(f)
 
         bm.to_mesh(mesh)
         mesh.update()
@@ -93,7 +117,7 @@ class AddPyramid(bpy.types.Operator):
         scn = bpy.context.scene
         ob = bpy.data.objects.new("pyramid_ob", mesh)
         scn.objects.link(ob)
-
+        
         return {'FINISHED'}
 
 
@@ -112,4 +136,3 @@ def unregister():
 
 if __name__ == "__main__":
     register()
-    
