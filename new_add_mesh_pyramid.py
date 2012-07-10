@@ -45,12 +45,14 @@ def create_mesh_data(init_size, height, height_offset, num_sides, num_steps):
                             for cur_side in range(num_sides)]
         quaternions = [Quaternion(axis, quat_angle) 
                             for quat_angle in quat_angles]
-        temp_vectors = [Vector([rad, 0, height_offset] for height_offset in z_data)]
+        init_vectors = [Vector([rad, 0, height_offset]) 
+                        for quat in quaternions]
         
-        # TODO: This is untested.  Need to run a set trace on this.
-        vectors = []
-        for i, vec in temp_vectors:
-            vectors.append( quaternions[i] * vec )
+        quat_vector_pairs = list(zip(quaternions, init_vectors))
+        vectors = [quaternion * vec for quaternion, vec in quat_vector_pairs]
+        # TODO: Figure out the rest of this.
+        
+        
         
         
         return data_set
