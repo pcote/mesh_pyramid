@@ -5,6 +5,7 @@ from math import pi
 from mathutils import Quaternion, Vector
 from pdb import set_trace
 
+"""
 def make_step(initial_size, step_height, height_offset, num_sides):
     
     axis = [0, 0, -1]
@@ -22,40 +23,33 @@ def make_step(initial_size, step_height, height_offset, num_sides):
     top_list = [[b[0], b[1], b[2]+step_height] for b in bottom_list]
     full_list = bottom_list + top_list
     return full_list, [] # TODO: Implement faces
+"""
 
-
-def create_mesh_data(init_size, height, height_offset, num_sides, num_steps):
+def create_step(width, base_level, step_height, num_sides):
         from functools import reduce
         from operator import concat
         
-        z_data = [[x]*num_sides*2 for x in range(num_steps+1)]
-        z_data = reduce(concat, z_data)
-        z_data = z_data[num_sides : -num_sides]
-        data_set = [(0,0,z) for z in z_data]
         
         axis = [0,0,-1]
         PI2 = pi * 2
-        rad = init_size / 2
+        rad = width / 2
         
-        """
-        make quaternion angles out of current side, num_sides, and pi*2
-        make a list of side values. (where by side i mean a corner actually)
-        """
         quat_angles = [(cur_side/num_sides) * PI2 
                             for cur_side in range(num_sides)]
+                            
         quaternions = [Quaternion(axis, quat_angle) 
                             for quat_angle in quat_angles]
-        init_vectors = [Vector([rad, 0, height_offset]) 
-                        for quat in quaternions]
+                            
+        init_vectors = [Vector([rad, 0, base_level]) 
+                            for quat in quaternions]
         
         quat_vector_pairs = list(zip(quaternions, init_vectors))
         vectors = [quaternion * vec for quaternion, vec in quat_vector_pairs]
-        # TODO: Figure out the rest of this.
-        
-        
-        
-        
-        return data_set
+        bottom_list = [(vec.x, vec.y, vec.z) for vec in vectors]
+        top_list = [(vec.x, vec.y, vec.z+step_height) for vec in vectors]
+        full_list = bottom_list + top_list
+        return full_list
+
 
 class AddPyramid(bpy.types.Operator):
     '''Add a mesh pyramid'''
@@ -98,16 +92,23 @@ class AddPyramid(bpy.types.Operator):
     
 
     def execute(self, context):
-        height_offset = 1 # placeholder variable.
         
-        verts_loc = create_mesh_data(self.initial_size, 
-                              self.height, height_offset,
-                              self.num_sides, self.num_steps)
+        all_verts = []
+        
+        height_offset = 0
+        cur_width = self.width
+        
+        for i in range(self.num_steps):
+            verts_loc = create_step(cur_width, height_offset, self.height,
+                                self.num_sides)
+            height_offset += self.height
+            cur_width -= self.reduce_by
+            all_verts.extend(verts_loc)        
         
         mesh = bpy.data.meshes.new("Pyramid")
         bm = bmesh.new()
 
-        for v_co in verts_loc:
+        for v_co in all_verts:
             bm.verts.new(v_co)
         
         #for f in faces_info:
