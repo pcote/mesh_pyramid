@@ -5,29 +5,8 @@ from math import pi
 from mathutils import Quaternion, Vector
 from pdb import set_trace
 
-"""
-def make_step(initial_size, step_height, height_offset, num_sides):
-    
-    axis = [0, 0, -1]
-    PI2 = pi * 2
-    rad = initial_size / 2.0
-    
-    bottom_list = []
-    
-    for i, cur_side in enumerate(range(num_sides)):
-        quat = Quaternion(axis, (cur_side / num_sides) * PI2)
-        vec_data =  quat * Vector([rad,0, height_offset])
-        vec_data = vec_data.x, vec_data.y, vec_data.z
-        bottom_list.append(vec_data)
-    
-    top_list = [[b[0], b[1], b[2]+step_height] for b in bottom_list]
-    full_list = bottom_list + top_list
-    return full_list, [] # TODO: Implement faces
-"""
 
 def create_step(width, base_level, step_height, num_sides):
-        from functools import reduce
-        from operator import concat
         
         
         axis = [0,0,-1]
@@ -57,11 +36,6 @@ class AddPyramid(bpy.types.Operator):
     bl_label = "Add Pyramid"
     bl_options = {'REGISTER', 'UNDO'}
 
-    initial_size = FloatProperty(
-                   name="Initial_Size", 
-                   description="Initial Size",
-                   min = 1.0, max = 10.0
-                   )
     num_sides = IntProperty(
                     name="Number Sides",
                     description = "Number of Sides",
