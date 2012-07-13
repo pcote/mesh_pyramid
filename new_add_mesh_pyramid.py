@@ -27,6 +27,7 @@ def create_step(width, base_level, step_height, num_sides):
         bottom_list = [(vec.x, vec.y, vec.z) for vec in vectors]
         top_list = [(vec.x, vec.y, vec.z+step_height) for vec in vectors]
         full_list = bottom_list + top_list
+        
         return full_list
 
 
@@ -41,6 +42,7 @@ class AddPyramid(bpy.types.Operator):
                     description = "Number of Sides",
                     min = 4, max = 8, default=4
                 )
+    
     num_steps = IntProperty(
                     name="Number of Steps",
                     description="Number of Steps",
@@ -73,8 +75,8 @@ class AddPyramid(bpy.types.Operator):
         cur_width = self.width
         
         for i in range(self.num_steps):
-            verts_loc = create_step(cur_width, height_offset, self.height,
-                                self.num_sides)
+            verts_loc = create_step(cur_width, height_offset, 
+                                        self.height, self.num_sides)
             height_offset += self.height
             cur_width -= self.reduce_by
             all_verts.extend(verts_loc)        
@@ -85,9 +87,15 @@ class AddPyramid(bpy.types.Operator):
         for v_co in all_verts:
             bm.verts.new(v_co)
         
-        #for f in faces_info:
-        #    bm.faces.new(f)
-
+        
+        bottom_face_verts = bm.verts[0:self.num_sides]
+        top_face_verts = bm.verts[-self.num_sides:]
+        #all_face_verts = bottom_face_verts + top_face_verts
+        
+        bm.faces.new(bottom_face_verts)
+        bm.faces.new(top_face_verts)
+        #set_trace()
+        
         bm.to_mesh(mesh)
         mesh.update()
 
