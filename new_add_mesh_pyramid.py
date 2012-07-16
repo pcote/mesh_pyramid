@@ -8,7 +8,6 @@ from pdb import set_trace
 
 def create_step(width, base_level, step_height, num_sides):
         
-        
         axis = [0,0,-1]
         PI2 = pi * 2
         rad = width / 2
@@ -27,8 +26,26 @@ def create_step(width, base_level, step_height, num_sides):
         bottom_list = [(vec.x, vec.y, vec.z) for vec in vectors]
         top_list = [(vec.x, vec.y, vec.z+step_height) for vec in vectors]
         full_list = bottom_list + top_list
-        
         return full_list
+
+
+def split_list(l, n):
+    """
+    split the blocks up.  Credit to oremj for this one.
+    http://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks-in-python
+    """
+    n *= 2
+    returned_list = [l[i:i+n] for i in range(0, len(l), n)]
+    return returned_list
+    
+
+
+def get_connector_pairs(lst, n_sides):
+    # chop off the verts that get used for the base and top
+    lst = lst[n_sides:]
+    lst = lst[:-n_sides]
+    lst = split_list(lst, n_sides)
+    return lst
 
 
 class AddPyramid(bpy.types.Operator):
@@ -37,34 +54,35 @@ class AddPyramid(bpy.types.Operator):
     bl_label = "Add Pyramid"
     bl_options = {'REGISTER', 'UNDO'}
 
+    
     num_sides = IntProperty(
                     name="Number Sides",
                     description = "Number of Sides",
-                    min = 4, max = 8, default=4
+                    min = 3, max = 20, default=4
                 )
-    
     num_steps = IntProperty(
                     name="Number of Steps",
                     description="Number of Steps",
-                    min=1, max=3, default=2)
+                    min=1, max=20, default=10)
                 
     width = FloatProperty(
             name="Width",
             description="Step Width",
             min=0.01, max=100.0,
-            default=1.0
+            default=2
             )
             
     height = FloatProperty(
             name="Height",
             description="Step Height",
             min=0.01, max=100.0,
-            default=1.0
+            default=0.1
             )
             
     reduce_by = FloatProperty(
                 name="Reduce By", description = "Reduce By",
-                min=.1, max = 2.0, default=.2) 
+                min=.01, max = 2.0, default= .20
+                ) 
     
 
     def execute(self, context):
@@ -75,8 +93,8 @@ class AddPyramid(bpy.types.Operator):
         cur_width = self.width
         
         for i in range(self.num_steps):
-            verts_loc = create_step(cur_width, height_offset, 
-                                        self.height, self.num_sides)
+            verts_loc = create_step(cur_width, height_offset, self.height,
+                                    self.num_sides)
             height_offset += self.height
             cur_width -= self.reduce_by
             all_verts.extend(verts_loc)        
@@ -88,20 +106,35 @@ class AddPyramid(bpy.types.Operator):
             bm.verts.new(v_co)
         
         
-        bottom_face_verts = bm.verts[0:self.num_sides]
-        top_face_verts = bm.verts[-self.num_sides:]
-        #all_face_verts = bottom_face_verts + top_face_verts
+        # get the base and cap faces done.
+        bm.faces.new(bm.verts[0:self.num_sides])
+        bm.faces.new(bm.verts[-self.num_sides:])
         
-        bm.faces.new(bottom_face_verts)
-        bm.faces.new(top_face_verts)
-        #set_trace()
+        block_vert_sets = split_list(bm.verts, self.num_sides)
+        
+        # do the sides.
+        n = self.num_sides
+        for bvs in block_vert_sets:
+            for i in range(self.num_sides-1):
+                bm.faces.new([bvs[i], bvs[i+n], bvs[i+n+1], bvs[i+1]])
+            bm.faces.new([bvs[n-1], bvs[(n*2)-1], bvs[n], bvs[0]])
+        
+            
+        # do the connectors to the sides.
+        # note: this is kind of redundant code.  should refactor this
+        # at some point.
+        connector_pairs = get_connector_pairs(bm.verts, self.num_sides)
+        for cp in connector_pairs:
+            for i in range(self.num_sides - 1):
+                bm.faces.new([cp[i], cp[i+n], cp[i+n+1], cp[i+1]])
+            bm.faces.new([cp[n-1], cp[(n*2)-1], cp[n], cp[0]])
         
         bm.to_mesh(mesh)
         mesh.update()
-
         scn = bpy.context.scene
         ob = bpy.data.objects.new("pyramid_ob", mesh)
         scn.objects.link(ob)
+        ob.select = True
         
         return {'FINISHED'}
 
