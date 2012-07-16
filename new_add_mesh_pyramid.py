@@ -106,28 +106,27 @@ class AddPyramid(bpy.types.Operator):
             bm.verts.new(v_co)
         
         
+        # do the sides.
+        n = self.num_sides
+        
+        def add_faces(n, block_vert_sets):
+            for bvs in block_vert_sets:
+                for i in range(self.num_sides-1):
+                    bm.faces.new([bvs[i], bvs[i+n], bvs[i+n+1], bvs[i+1]])
+                bm.faces.new([bvs[n-1], bvs[(n*2)-1], bvs[n], bvs[0]])
+                
+        
         # get the base and cap faces done.
         bm.faces.new(bm.verts[0:self.num_sides])
         bm.faces.new(bm.verts[-self.num_sides:])
         
+        # side faces
         block_vert_sets = split_list(bm.verts, self.num_sides)
+        add_faces(self.num_sides, block_vert_sets)
         
-        # do the sides.
-        n = self.num_sides
-        for bvs in block_vert_sets:
-            for i in range(self.num_sides-1):
-                bm.faces.new([bvs[i], bvs[i+n], bvs[i+n+1], bvs[i+1]])
-            bm.faces.new([bvs[n-1], bvs[(n*2)-1], bvs[n], bvs[0]])
-        
-            
-        # do the connectors to the sides.
-        # note: this is kind of redundant code.  should refactor this
-        # at some point.
+        # connector faces between faces and faces of the block above it.
         connector_pairs = get_connector_pairs(bm.verts, self.num_sides)
-        for cp in connector_pairs:
-            for i in range(self.num_sides - 1):
-                bm.faces.new([cp[i], cp[i+n], cp[i+n+1], cp[i+1]])
-            bm.faces.new([cp[n-1], cp[(n*2)-1], cp[n], cp[0]])
+        add_faces(self.num_sides, connector_pairs)
         
         bm.to_mesh(mesh)
         mesh.update()
