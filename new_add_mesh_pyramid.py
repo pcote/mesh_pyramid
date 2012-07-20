@@ -1,9 +1,41 @@
+# ***** BEGIN GPL LICENSE BLOCK *****
+#
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.        See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#
+# ***** END GPL LICENCE BLOCK *****
+
+# (c) 2011 Phil Cote (cotejrp1)
+'''
+bl_info = {
+    'name': 'Mesh Pyramid',
+    'author': 'Phil Cote, cotejrp1, (http://www.blenderaddons.com)',
+    'version': (0, 5),
+    "blender": (2, 6, 3),
+    'location': 'View3D > Add > Mesh',
+    'description': 'Create an egyption-style step pyramid',
+    'warning': '',  # used for warning icon and text in addons panel
+    'category': 'Add Mesh'}
+'''
+
 import bpy
 import bmesh
 from bpy.props import FloatProperty, IntProperty
 from math import pi
 from mathutils import Quaternion, Vector
-from pdb import set_trace
+from bpy_extras.object_utils import AddObjectHelper, object_data_add
 
 
 def create_step(width, base_level, step_height, num_sides):
@@ -22,9 +54,14 @@ def create_step(width, base_level, step_height, num_sides):
                             for quat in quaternions]
         
         quat_vector_pairs = list(zip(quaternions, init_vectors))
-        vectors = [quaternion * vec for quaternion, vec in quat_vector_pairs]
-        bottom_list = [(vec.x, vec.y, vec.z) for vec in vectors]
-        top_list = [(vec.x, vec.y, vec.z+step_height) for vec in vectors]
+        
+        vectors = [quaternion * vec 
+                        for quaternion, vec in quat_vector_pairs]
+        bottom_list = [(vec.x, vec.y, vec.z) 
+                        for vec in vectors]
+        top_list = [(vec.x, vec.y, vec.z+step_height) 
+                        for vec in vectors]
+                        
         full_list = bottom_list + top_list
         return full_list
 
@@ -47,46 +84,7 @@ def get_connector_pairs(lst, n_sides):
     lst = split_list(lst, n_sides)
     return lst
 
-
-class AddPyramid(bpy.types.Operator):
-    '''Add a mesh pyramid'''
-    bl_idname = "mesh.pyramid_add"
-    bl_label = "Add Pyramid"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    
-    num_sides = IntProperty(
-                    name="Number Sides",
-                    description = "Number of Sides",
-                    min = 3, max = 20, default=4
-                )
-    num_steps = IntProperty(
-                    name="Number of Steps",
-                    description="Number of Steps",
-                    min=1, max=20, default=10)
-                
-    width = FloatProperty(
-            name="Width",
-            description="Step Width",
-            min=0.01, max=100.0,
-            default=2
-            )
-            
-    height = FloatProperty(
-            name="Height",
-            description="Step Height",
-            min=0.01, max=100.0,
-            default=0.1
-            )
-            
-    reduce_by = FloatProperty(
-                name="Reduce By", description = "Reduce By",
-                min=.01, max = 2.0, default= .20
-                ) 
-    
-
-    def execute(self, context):
-        
+def add_pyramid_object(self, context):
         all_verts = []
         
         height_offset = 0
@@ -130,14 +128,48 @@ class AddPyramid(bpy.types.Operator):
         
         bm.to_mesh(mesh)
         mesh.update()
-        scn = bpy.context.scene
-        ob = bpy.data.objects.new("pyramid_ob", mesh)
-        scn.objects.link(ob)
-        ob.select = True
-        
+        res = object_data_add(context, mesh, operator=self)
+    
+
+class AddPyramid(bpy.types.Operator, AddObjectHelper):
+    '''Add a mesh pyramid'''
+    bl_idname = "mesh.primitive_steppyramid_add"
+    bl_label = "Pyramid"
+    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
+
+    
+    num_sides = IntProperty(
+                    name="Number Sides",
+                    description = "How many sides each step will have",
+                    min = 3, max = 20, default=4)
+    num_steps = IntProperty(
+                    name="Number of Steps",
+                    description="How many steps for the overall pyramid",
+                    min=1, max=20, default=10)
+                
+    width = FloatProperty(
+            name="Initial Width",
+            description="Initial base step width",
+            min=0.01, max=100.0,
+            default=2)
+            
+    height = FloatProperty(
+            name="Height",
+            description="How tall each step will be",
+            min=0.01, max=100.0,
+            default=0.1)
+            
+    reduce_by = FloatProperty(
+                name="Reduce Step By", 
+                description = "How much to reduce each succeeding step by",
+                min=.01, max = 2.0, default= .20) 
+    
+
+    def execute(self, context):
+        add_pyramid_object(self, context)
         return {'FINISHED'}
 
-
+'''
 def menu_func(self, context):
     self.layout.operator(AddPyramid.bl_idname, icon='PLUGIN')
 
@@ -153,3 +185,4 @@ def unregister():
 
 if __name__ == "__main__":
     register()
+'''
